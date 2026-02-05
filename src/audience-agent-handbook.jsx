@@ -68,7 +68,7 @@ const AudienceAgentHandbook = () => {
         positives.push(language === 'en' ? 'Multiple conditions defined' : 'Múltiples condiciones definidas');
       }
       
-      if (lowerPrompt.includes('nescafé') || lowerPrompt.includes('kitkat') || lowerPrompt.includes('maggi') || lowerPrompt.match(/product|producto/)) {
+      if (lowerPrompt.match(/product|producto|coffee|snack|beverage/i)) {
         score += 5;
         positives.push(language === 'en' ? 'Specific products mentioned' : 'Productos específicos mencionados');
       }
@@ -162,7 +162,6 @@ const AudienceAgentHandbook = () => {
     en: {
       title: "Audience Agent Prompting Guide",
       subtitle: "Best Practices for Segment Creation & Analysis",
-      company: "Nestlé Mexico",
       toggle: "Español",
       toc: {
         title: "Table of Contents",
@@ -193,7 +192,7 @@ const AudienceAgentHandbook = () => {
           ],
           goodExample: {
             title: "Good Prompt Example",
-            prompt: "Create a segment of users who purchased Nescafé products in the last 30 days.",
+            prompt: "Create a segment of users who purchased coffee products in the last 30 days.",
             explanation: "Clear, specific timeframe, single product category, one condition."
           },
           badExample: {
@@ -214,7 +213,7 @@ const AudienceAgentHandbook = () => {
           ],
           goodExample: {
             title: "Good Progressive Prompt",
-            prompt: "Refine the Nescafé purchasers segment to include only users who: (1) made a purchase in the last 30 days, AND (2) have spent more than $500 MXN total, AND (3) are located in Mexico City.",
+            prompt: "Refine the coffee purchasers segment to include only users who: (1) made a purchase in the last 30 days, AND (2) have spent more than $500 total, AND (3) are located in New York.",
             explanation: "Clear progression, numbered conditions, logical AND relationship."
           },
           badExample: {
@@ -235,12 +234,12 @@ const AudienceAgentHandbook = () => {
           ],
           goodExample: {
             title: "Good Complex Prompt",
-            prompt: "Create a segment where users meet ALL of these criteria:\n1. Purchased (Nescafé OR KitKat OR Maggi) in last 60 days\n2. Total lifetime spend > $1000 MXN\n3. Located in (CDMX OR Guadalajara OR Monterrey)\n4. Age between 25-45 years",
+            prompt: "Create a segment where users meet ALL of these criteria:\n1. Purchased (Coffee OR Snacks OR Beverages) in last 60 days\n2. Total lifetime spend > $1000\n3. Located in (New York OR Los Angeles OR Chicago)\n4. Age between 25-45 years",
             explanation: "Clear structure, explicit AND/OR operators, organized conditions, specific values."
           },
           badExample: {
             title: "Avoid This Approach",
-            prompt: "Get users who bought Nescafé or maybe KitKat and spent money and live in major cities or are the right age.",
+            prompt: "Get users who bought coffee or maybe snacks and spent money and live in major cities or are the right age.",
             explanation: "Ambiguous logic, unclear AND/OR relationships, vague quantities."
           }
         },
@@ -256,8 +255,8 @@ const AudienceAgentHandbook = () => {
           ],
           goodExample: {
             title: "Good Text Matching Prompt",
-            prompt: "Create a segment of users with Gmail or Hotmail email addresses who bought the 200g jar of Nescafé Clásico and live in or around Guadalajara.",
-            explanation: "Clear intent about email domains, specific product with size, flexible location matching ('in or around'). The agent can interpret 'Gmail' as matching '@gmail.com' and 'around Guadalajara' as the metro area."
+            prompt: "Create a segment of users with Gmail or Hotmail email addresses who bought the Premium Coffee Bundle and live in or around Chicago.",
+            explanation: "Clear intent about email domains, specific product, flexible location matching ('in or around'). The agent can interpret 'Gmail' as matching '@gmail.com' and 'around Chicago' as the metro area."
           },
           badExample: {
             title: "Avoid This Approach",
@@ -277,7 +276,7 @@ const AudienceAgentHandbook = () => {
           ],
           goodExample: {
             title: "Good Insight Prompt",
-            prompt: "Analyze the 'High-Value Coffee Buyers' segment and provide:\n1. Average purchase frequency in the last 90 days\n2. Most popular products within this segment\n3. Geographic distribution across Mexico\n4. Comparison with overall customer base\n5. Recommendations for targeted campaigns",
+            prompt: "Analyze the 'High-Value Coffee Buyers' segment and provide:\n1. Average purchase frequency in the last 90 days\n2. Most popular products within this segment\n3. Geographic distribution across all regions\n4. Comparison with overall customer base\n5. Recommendations for targeted campaigns",
             explanation: "Specific metrics requested, clear timeframe, structured format, asks for actionable insights."
           },
           badExample: {
@@ -300,7 +299,7 @@ const AudienceAgentHandbook = () => {
         quiz: {
           title: "Test Your Prompt Skills",
           subtitle: "Enter a prompt below and get instant feedback on its quality",
-          placeholder: "Example: Create a segment of users who purchased Nescafé in the last 30 days...",
+          placeholder: "Example: Create a segment of users who purchased coffee in the last 30 days...",
           buttonText: "Analyze Prompt",
           analyzing: "Analyzing...",
           scoreLabel: "Prompt Quality Score",
@@ -316,7 +315,6 @@ const AudienceAgentHandbook = () => {
     es: {
       title: "Guía de Prompts para el Agente de Audiencias",
       subtitle: "Mejores Prácticas para Creación y Análisis de Segmentos",
-      company: "Nestlé México",
       toggle: "English",
       toc: {
         title: "Tabla de Contenidos",
@@ -347,7 +345,7 @@ const AudienceAgentHandbook = () => {
           ],
           goodExample: {
             title: "Ejemplo de Buen Prompt",
-            prompt: "Crea un segmento de usuarios que compraron productos Nescafé en los últimos 30 días.",
+            prompt: "Crea un segmento de usuarios que compraron productos de café en los últimos 30 días.",
             explanation: "Claro, marco temporal específico, una categoría de producto, una condición."
           },
           badExample: {
@@ -368,7 +366,7 @@ const AudienceAgentHandbook = () => {
           ],
           goodExample: {
             title: "Buen Prompt Progresivo",
-            prompt: "Refina el segmento de compradores de Nescafé para incluir solo usuarios que: (1) hicieron una compra en los últimos 30 días, Y (2) han gastado más de $500 MXN en total, Y (3) están ubicados en Ciudad de México.",
+            prompt: "Refina el segmento de compradores de café para incluir solo usuarios que: (1) hicieron una compra en los últimos 30 días, Y (2) han gastado más de $500 en total, Y (3) están ubicados en Nueva York.",
             explanation: "Progresión clara, condiciones numeradas, relación Y lógica."
           },
           badExample: {
@@ -389,12 +387,12 @@ const AudienceAgentHandbook = () => {
           ],
           goodExample: {
             title: "Buen Prompt Complejo",
-            prompt: "Crea un segmento donde los usuarios cumplan TODOS estos criterios:\n1. Compraron (Nescafé O KitKat O Maggi) en los últimos 60 días\n2. Gasto total acumulado > $1000 MXN\n3. Ubicados en (CDMX O Guadalajara O Monterrey)\n4. Edad entre 25-45 años",
+            prompt: "Crea un segmento donde los usuarios cumplan TODOS estos criterios:\n1. Compraron (Café O Snacks O Bebidas) en los últimos 60 días\n2. Gasto total acumulado > $1000\n3. Ubicados en (Nueva York O Los Ángeles O Chicago)\n4. Edad entre 25-45 años",
             explanation: "Estructura clara, operadores Y/O explícitos, condiciones organizadas, valores específicos."
           },
           badExample: {
             title: "Evita Este Enfoque",
-            prompt: "Obtén usuarios que compraron Nescafé o tal vez KitKat y gastaron dinero y viven en ciudades grandes o tienen la edad correcta.",
+            prompt: "Obtén usuarios que compraron café o tal vez snacks y gastaron dinero y viven en ciudades grandes o tienen la edad correcta.",
             explanation: "Lógica ambigua, relaciones Y/O poco claras, cantidades vagas."
           }
         },
@@ -410,8 +408,8 @@ const AudienceAgentHandbook = () => {
           ],
           goodExample: {
             title: "Buen Prompt de Coincidencia de Texto",
-            prompt: "Crea un segmento de usuarios con direcciones de correo de Gmail o Hotmail que compraron el frasco de 200g de Nescafé Clásico y viven en Guadalajara o sus alrededores.",
-            explanation: "Intención clara sobre dominios de correo, producto específico con tamaño, coincidencia de ubicación flexible ('en o sus alrededores'). El agente puede interpretar 'Gmail' como '@gmail.com' y 'alrededores de Guadalajara' como el área metropolitana."
+            prompt: "Crea un segmento de usuarios con direcciones de correo de Gmail o Hotmail que compraron el Paquete Premium de Café y viven en Chicago o sus alrededores.",
+            explanation: "Intención clara sobre dominios de correo, producto específico, coincidencia de ubicación flexible ('en o sus alrededores'). El agente puede interpretar 'Gmail' como '@gmail.com' y 'alrededores de Chicago' como el área metropolitana."
           },
           badExample: {
             title: "Evita Este Enfoque",
@@ -431,7 +429,7 @@ const AudienceAgentHandbook = () => {
           ],
           goodExample: {
             title: "Buen Prompt de Insight",
-            prompt: "Analiza el segmento 'Compradores de Café de Alto Valor' y proporciona:\n1. Frecuencia promedio de compra en los últimos 90 días\n2. Productos más populares dentro de este segmento\n3. Distribución geográfica en México\n4. Comparación con la base general de clientes\n5. Recomendaciones para campañas dirigidas",
+            prompt: "Analiza el segmento 'Compradores de Café de Alto Valor' y proporciona:\n1. Frecuencia promedio de compra en los últimos 90 días\n2. Productos más populares dentro de este segmento\n3. Distribución geográfica en todas las regiones\n4. Comparación con la base general de clientes\n5. Recomendaciones para campañas dirigidas",
             explanation: "Métricas específicas solicitadas, marco temporal claro, formato estructurado, solicita insights accionables."
           },
           badExample: {
@@ -454,7 +452,7 @@ const AudienceAgentHandbook = () => {
         quiz: {
           title: "Prueba Tus Habilidades de Prompts",
           subtitle: "Ingresa un prompt y recibe retroalimentación instantánea sobre su calidad",
-          placeholder: "Ejemplo: Crea un segmento de usuarios que compraron Nescafé en los últimos 30 días...",
+          placeholder: "Ejemplo: Crea un segmento de usuarios que compraron café en los últimos 30 días...",
           buttonText: "Analizar Prompt",
           analyzing: "Analizando...",
           scoreLabel: "Puntuación de Calidad del Prompt",
@@ -470,7 +468,6 @@ const AudienceAgentHandbook = () => {
     ja: {
       title: "オーディエンスエージェントプロンプトガイド",
       subtitle: "セグメント作成と分析のベストプラクティス",
-      company: "ネスレ メキシコ",
       toggle: "言語",
       toc: {
         title: "目次",
@@ -501,7 +498,7 @@ const AudienceAgentHandbook = () => {
           ],
           goodExample: {
             title: "良いプロンプトの例",
-            prompt: "過去30日間にネスカフェ製品を購入したユーザーのセグメントを作成してください。",
+            prompt: "過去30日間にコーヒー製品を購入したユーザーのセグメントを作成してください。",
             explanation: "明確で、具体的な期間、単一の製品カテゴリー、1つの条件。"
           },
           badExample: {
@@ -522,7 +519,7 @@ const AudienceAgentHandbook = () => {
           ],
           goodExample: {
             title: "良い段階的プロンプト",
-            prompt: "ネスカフェ購入者セグメントを改良して、次の条件をすべて満たすユーザーのみを含めます：(1) 過去30日間に購入、かつ (2) 合計$500 MXN以上を支出、かつ (3) メキシコシティに所在。",
+            prompt: "コーヒー購入者セグメントを改良して、次の条件をすべて満たすユーザーのみを含めます：(1) 過去30日間に購入、かつ (2) 合計$500以上を支出、かつ (3) ニューヨークに所在。",
             explanation: "明確な進行、番号付き条件、論理的なAND関係。"
           },
           badExample: {
@@ -543,12 +540,12 @@ const AudienceAgentHandbook = () => {
           ],
           goodExample: {
             title: "良い複雑なプロンプト",
-            prompt: "次のすべての基準を満たすユーザーのセグメントを作成：\n1. 過去60日間に（ネスカフェ または キットカット または マギー）を購入\n2. 生涯合計支出 > $1000 MXN\n3. （CDMX または グアダラハラ または モンテレー）に所在\n4. 年齢25〜45歳",
+            prompt: "次のすべての基準を満たすユーザーのセグメントを作成：\n1. 過去60日間に（コーヒー または スナック または 飲料）を購入\n2. 生涯合計支出 > $1000\n3. （ニューヨーク または ロサンゼルス または シカゴ）に所在\n4. 年齢25〜45歳",
             explanation: "明確な構造、明示的なAND/OR演算子、整理された条件、具体的な値。"
           },
           badExample: {
             title: "避けるべきアプローチ",
-            prompt: "ネスカフェまたは多分キットカットを購入し、お金を使い、大都市に住んでいるか適切な年齢のユーザーを取得してください。",
+            prompt: "コーヒーまたは多分スナックを購入し、お金を使い、大都市に住んでいるか適切な年齢のユーザーを取得してください。",
             explanation: "曖昧なロジック、不明確なAND/OR関係、曖昧な数量。"
           }
         },
@@ -564,8 +561,8 @@ const AudienceAgentHandbook = () => {
           ],
           goodExample: {
             title: "良いテキストマッチングプロンプト",
-            prompt: "GmailまたはHotmailのメールアドレスを持ち、200gのネスカフェ クラシコを購入し、グアダラハラまたはその周辺に住むユーザーのセグメントを作成してください。",
-            explanation: "メールドメインについての明確な意図、サイズ付きの具体的な製品、柔軟な場所マッチング（「周辺」）。エージェントは「Gmail」を「@gmail.com」と、「グアダラハラ周辺」を都市圏として解釈できます。"
+            prompt: "GmailまたはHotmailのメールアドレスを持ち、プレミアムコーヒーバンドルを購入し、シカゴまたはその周辺に住むユーザーのセグメントを作成してください。",
+            explanation: "メールドメインについての明確な意図、具体的な製品、柔軟な場所マッチング（「周辺」）。エージェントは「Gmail」を「@gmail.com」と、「シカゴ周辺」を都市圏として解釈できます。"
           },
           badExample: {
             title: "避けるべきアプローチ",
@@ -585,7 +582,7 @@ const AudienceAgentHandbook = () => {
           ],
           goodExample: {
             title: "良いインサイトプロンプト",
-            prompt: "「高価値コーヒー購入者」セグメントを分析し、次を提供してください：\n1. 過去90日間の平均購入頻度\n2. このセグメント内の最も人気のある製品\n3. メキシコ全体での地理的分布\n4. 全体的な顧客ベースとの比較\n5. ターゲットキャンペーンのための推奨事項",
+            prompt: "「高価値コーヒー購入者」セグメントを分析し、次を提供してください：\n1. 過去90日間の平均購入頻度\n2. このセグメント内の最も人気のある製品\n3. 全地域での地理的分布\n4. 全体的な顧客ベースとの比較\n5. ターゲットキャンペーンのための推奨事項",
             explanation: "具体的なメトリクスが要求され、明確な期間、構造化された形式、実行可能なインサイトを求める。"
           },
           badExample: {
@@ -608,7 +605,7 @@ const AudienceAgentHandbook = () => {
         quiz: {
           title: "プロンプトスキルをテスト",
           subtitle: "以下にプロンプトを入力して、品質に関する即座のフィードバックを取得",
-          placeholder: "例：過去30日間にネスカフェを購入したユーザーのセグメントを作成...",
+          placeholder: "例：過去30日間にコーヒーを購入したユーザーのセグメントを作成...",
           buttonText: "プロンプトを分析",
           analyzing: "分析中...",
           scoreLabel: "プロンプト品質スコア",
@@ -685,7 +682,6 @@ const AudienceAgentHandbook = () => {
           <h2 className="text-2xl font-semibold mb-2">
             {t.subtitle}
           </h2>
-          <p className="text-blue-100">{t.company}</p>
         </div>
       </header>
 
