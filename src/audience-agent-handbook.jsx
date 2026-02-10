@@ -16,7 +16,7 @@ const AudienceAgentHandbook = () => {
       setShowScrollTop(window.scrollY > 400);
 
       // Detect active section
-      const sections = ['intro', 'section1', 'section2', 'section3', 'section4', 'section5', 'quickref', 'quiz'];
+      const sections = ['intro', 'section1', 'section2', 'section3', 'section4', 'section5', 'section6', 'quickref', 'quiz'];
       const scrollPosition = window.scrollY + 200;
 
       for (const sectionId of sections) {
@@ -38,78 +38,207 @@ const AudienceAgentHandbook = () => {
 
   const analyzePrompt = (prompt) => {
     setIsAnalyzing(true);
-    
+
     // Simulate analysis delay
     setTimeout(() => {
       let score = 50;
       let feedback = [];
       let positives = [];
-      
+      let warnings = [];
+      let complexityFlags = {};
+
       const lowerPrompt = prompt.toLowerCase();
-      
-      // Positive indicators
+      const charCount = prompt.length;
+
+      // ============================================
+      // COMPLEXITY DETECTION - Check for overly complex prompts
+      // ============================================
+
+      // Character limit thresholds
+      const CHAR_LIMIT_WARNING = 500;
+      const CHAR_LIMIT_ERROR = 1500;
+
+      // Detect section headers (SECTION 0, SECTION 1, etc.)
+      const sectionMatches = prompt.match(/SECTION\s*\d+|SECTION\s*[A-Z]+\s*[–-]/gi) || [];
+      const sectionCount = sectionMatches.length;
+
+      // Detect execution rules and meta-instructions
+      const executionRulePatterns = /EXECUTION RULES|APPROVAL GATE|DO NOT BEGIN|STOP HERE|BEFORE PERFORMING|ASK FOR APPROVAL/gi;
+      const executionRuleMatches = prompt.match(executionRulePatterns) || [];
+      const hasExecutionRules = executionRuleMatches.length > 0;
+
+      // Detect multiple definitions/logic blocks
+      const definitionPatterns = /DEFINITION|DEFINE:|LOGIC|COHORT|SEGMENT DEFINITION|DATASET/gi;
+      const definitionMatches = prompt.match(definitionPatterns) || [];
+      const definitionCount = definitionMatches.length;
+
+      // Detect segment rules - numbered items, criteria, conditions
+      const rulePatterns = /^\s*\d+\.\s+|^\s*[-•]\s+|\(\d+\)|criterion|criteria|condition|rule|filter|include only|exclude/gim;
+      const ruleMatches = prompt.match(rulePatterns) || [];
+      const ruleCount = ruleMatches.length;
+
+      // Detect multiple objectives
+      const objectivePatterns = /OBJECTIVE|ANALYSIS REQUIREMENTS|OUTPUT|ANALYSIS MODULE|REQUIREMENTS/gi;
+      const objectiveMatches = prompt.match(objectivePatterns) || [];
+      const objectiveCount = objectiveMatches.length;
+
+      // Calculate complexity score
+      let complexityScore = 0;
+      complexityScore += sectionCount * 15;
+      complexityScore += hasExecutionRules ? 25 : 0;
+      complexityScore += definitionCount * 8;
+      complexityScore += Math.max(0, ruleCount - 3) * 5;
+      complexityScore += Math.max(0, objectiveCount - 1) * 10;
+      complexityScore += charCount > CHAR_LIMIT_ERROR ? 30 : (charCount > CHAR_LIMIT_WARNING ? 15 : 0);
+
+      // Determine if prompt is too complex
+      const isTooComplex = complexityScore >= 40 || sectionCount >= 2 || hasExecutionRules;
+
+      // Calculate suggested sub-prompts
+      let suggestedSubPrompts = 1;
+      if (sectionCount >= 2) {
+        suggestedSubPrompts = Math.max(suggestedSubPrompts, sectionCount);
+      }
+      if (definitionCount >= 3) {
+        suggestedSubPrompts = Math.max(suggestedSubPrompts, Math.ceil(definitionCount / 2));
+      }
+      if (objectiveCount >= 2) {
+        suggestedSubPrompts = Math.max(suggestedSubPrompts, objectiveCount);
+      }
+      if (ruleCount > 6) {
+        suggestedSubPrompts = Math.max(suggestedSubPrompts, Math.ceil(ruleCount / 3));
+      }
+
+      // Store complexity flags
+      complexityFlags = {
+        charCount,
+        charLimitWarning: CHAR_LIMIT_WARNING,
+        charLimitError: CHAR_LIMIT_ERROR,
+        sectionCount,
+        ruleCount,
+        definitionCount,
+        objectiveCount,
+        hasExecutionRules,
+        isTooComplex,
+        suggestedSubPrompts,
+        complexityScore
+      };
+
+      // ============================================
+      // COMPLEXITY WARNINGS & SCORE PENALTIES
+      // ============================================
+
+      if (isTooComplex) {
+        score = 0; // Reject the prompt entirely
+        warnings.push({
+          type: 'error',
+          title: language === 'en' ? 'Prompt Too Complex' : 'Prompt demasiado complejo',
+          message: language === 'en'
+            ? 'This prompt contains too many sections, rules, or meta-instructions. The Audience Agent works best with focused, single-objective prompts.'
+            : 'Este prompt contiene demasiadas secciones, reglas o meta-instrucciones. El Agente de Audiencias funciona mejor con prompts enfocados de un solo objetivo.'
+        });
+      }
+
+      // Character limit warnings
+      if (charCount > CHAR_LIMIT_ERROR) {
+        score -= 30;
+        warnings.push({
+          type: 'error',
+          title: language === 'en'
+            ? `Character Limit Exceeded (${charCount.toLocaleString()} / ${CHAR_LIMIT_ERROR} max)`
+            : `Límite de caracteres excedido (${charCount.toLocaleString()} / máximo ${CHAR_LIMIT_ERROR})`,
+          message: language === 'en'
+            ? 'Your prompt is far too long. Break it into smaller, focused requests.'
+            : 'Tu prompt es demasiado largo. Divídelo en solicitudes más pequeñas y enfocadas.'
+        });
+      } else if (charCount > CHAR_LIMIT_WARNING) {
+        score -= 15;
+        warnings.push({
+          type: 'warning',
+          title: language === 'en'
+            ? `Prompt Length Warning (${charCount.toLocaleString()} / ${CHAR_LIMIT_WARNING} recommended)`
+            : `Advertencia de longitud (${charCount.toLocaleString()} / ${CHAR_LIMIT_WARNING} recomendado)`,
+          message: language === 'en'
+            ? 'Consider simplifying your prompt for better results.'
+            : 'Considera simplificar tu prompt para mejores resultados.'
+        });
+      }
+
+      // Section count warnings
+      if (sectionCount >= 2) {
+        warnings.push({
+          type: 'error',
+          title: language === 'en' ? `Multiple Sections Detected (${sectionCount})` : `Múltiples secciones detectadas (${sectionCount})`,
+          message: language === 'en'
+            ? 'Split each section into a separate prompt for better results.'
+            : 'Divide cada sección en un prompt separado para mejores resultados.'
+        });
+      }
+
+      // ============================================
+      // POSITIVE INDICATORS
+      // ============================================
+
       if (lowerPrompt.includes('create') || lowerPrompt.includes('segment') || lowerPrompt.includes('analyze')) {
         score += 10;
         positives.push(language === 'en' ? 'Clear objective stated' : 'Objetivo claro establecido');
       }
-      
+
       if (lowerPrompt.match(/\d+\s*(days?|weeks?|months?|años?|días?|meses?|semanas?)/)) {
         score += 10;
         positives.push(language === 'en' ? 'Specific timeframe included' : 'Marco temporal específico incluido');
       }
-      
+
       if (lowerPrompt.match(/\$\d+|>\s*\d+|<\s*\d+|between\s+\d+/)) {
         score += 10;
         positives.push(language === 'en' ? 'Quantitative criteria specified' : 'Criterios cuantitativos especificados');
       }
-      
+
       if ((lowerPrompt.match(/and|y/g) || []).length >= 2) {
         score += 10;
         positives.push(language === 'en' ? 'Multiple conditions defined' : 'Múltiples condiciones definidas');
       }
-      
+
       if (lowerPrompt.match(/product|producto|westlaw|practical law|checkpoint|legal|tax|compliance|subscription|license/i)) {
         score += 5;
         positives.push(language === 'en' ? 'Specific products mentioned' : 'Productos específicos mencionados');
       }
-      
+
       if (lowerPrompt.includes('email') || lowerPrompt.includes('correo') || lowerPrompt.includes('gmail') || lowerPrompt.includes('city') || lowerPrompt.includes('ciudad')) {
         score += 5;
         positives.push(language === 'en' ? 'Relevant data fields identified' : 'Campos de datos relevantes identificados');
       }
-      
-      // Negative indicators
+
+      // ============================================
+      // NEGATIVE INDICATORS
+      // ============================================
+
       if (lowerPrompt.match(/maybe|perhaps|might|tal vez|quizás|posiblemente/)) {
         score -= 10;
         feedback.push(language === 'en' ? 'Remove uncertain language (maybe, perhaps)' : 'Eliminar lenguaje incierto (tal vez, quizás)');
       }
-      
+
       if (lowerPrompt.match(/good|better|best|mejores?|buenos?/)) {
         score -= 10;
         feedback.push(language === 'en' ? 'Avoid vague qualifiers - be specific' : 'Evitar calificadores vagos - ser específico');
       }
-      
+
       if (!lowerPrompt.match(/create|analyze|show|find|crea|analiza|muestra|encuentra/)) {
         score -= 15;
         feedback.push(language === 'en' ? 'Start with a clear action verb' : 'Comenzar con un verbo de acción claro');
       }
-      
+
       if (prompt.length < 20) {
         score -= 15;
         feedback.push(language === 'en' ? 'Prompt is too short - add more detail' : 'Prompt muy corto - agregar más detalle');
       }
-      
-      if (prompt.split(' ').length > 100) {
-        score -= 10;
-        feedback.push(language === 'en' ? 'Prompt is too long - break into steps' : 'Prompt muy largo - dividir en pasos');
-      }
-      
+
       // Cap score between 0 and 100
       score = Math.max(0, Math.min(100, score));
-      
+
       let rating = 'Poor';
       let color = 'red';
-      
+
       if (score >= 80) {
         rating = language === 'en' ? 'Excellent' : 'Excelente';
         color = 'green';
@@ -123,13 +252,15 @@ const AudienceAgentHandbook = () => {
         rating = language === 'en' ? 'Needs Improvement' : 'Necesita Mejora';
         color = 'red';
       }
-      
+
       setQuizResult({
         score,
         rating,
         color,
         feedback,
-        positives
+        positives,
+        warnings,
+        complexityFlags
       });
       setIsAnalyzing(false);
     }, 1000);
@@ -172,6 +303,7 @@ const AudienceAgentHandbook = () => {
           { id: 'section3', label: '3. Complex Rules' },
           { id: 'section4', label: '4. Text Matching' },
           { id: 'section5', label: '5. Insights' },
+          { id: 'section6', label: '6. Prompt Limits' },
           { id: 'quickref', label: 'Quick Reference' },
           { id: 'quiz', label: 'Test Your Skills' }
         ]
@@ -285,6 +417,40 @@ const AudienceAgentHandbook = () => {
             explanation: "No specific metrics, no timeframe, too vague, unclear what information is needed."
           }
         },
+        promptLimits: {
+          title: "6. Prompt Limits & Complexity Guidelines",
+          description: "The Audience Agent works best with focused, single-objective prompts. Avoid overly complex prompts that try to accomplish too much at once.",
+          limitsTitle: "Recommended Limits",
+          limits: [
+            { label: "Character Limit", value: "500", max: "1,500", description: "Keep prompts concise. Aim for under 500 characters, never exceed 1,500." },
+            { label: "Segment Rules", value: "3-5", max: "6", description: "Limit conditions per prompt. More rules = break into multiple prompts." },
+            { label: "Sections", value: "0", max: "1", description: "Avoid multi-section prompts. Each section should be a separate request." },
+            { label: "Definitions", value: "1-2", max: "2", description: "Define one concept at a time, then reference in follow-up prompts." }
+          ],
+          avoidTitle: "What to Avoid",
+          avoidItems: [
+            { title: "Meta-Instructions", description: "Phrases like 'EXECUTION RULES', 'APPROVAL GATE', 'DO NOT BEGIN', 'STOP HERE' confuse the agent." },
+            { title: "Multiple Objectives", description: "Don't combine analysis, segment creation, and reporting in one prompt." },
+            { title: "Complex Logical Chains", description: "Deeply nested AND/OR logic with many conditions should be simplified." },
+            { title: "Custom Data Definitions", description: "Avoid redefining subscription tiers, renewal logic, or segment definitions inline." }
+          ],
+          breakdownTitle: "When to Break Down Prompts",
+          breakdownDescription: "If your prompt has any of these, consider splitting it:",
+          breakdownItems: [
+            "Multiple SECTION headers (SECTION 1, SECTION 2, etc.)",
+            "More than 5 numbered rules or conditions",
+            "Custom definitions for subscriptions, tiers, or cohorts",
+            "Multiple analysis objectives or output requirements",
+            "Instructions about how to process the prompt itself"
+          ],
+          exampleTitle: "Example: Breaking Down a Complex Request",
+          exampleBad: "SECTION 1: Define subscriber tiers based on usage. SECTION 2: Apply renewal logic. SECTION 3: Analyze churn timing by product.",
+          exampleGood: [
+            "Prompt 1: \"Create subscriber tiers based on login frequency in the last 6 months: Power Users (daily), Regular (weekly), Occasional (monthly), At-Risk (< monthly).\"",
+            "Prompt 2: \"For the subscriber tiers created, identify customers approaching renewal (within 60 days) with declining usage.\"",
+            "Prompt 3: \"Analyze churn patterns for each subscriber tier, comparing Westlaw vs Practical Law products.\""
+          ]
+        },
         quickReference: {
           title: "Quick Reference: Prompt Structure Template",
           template: [
@@ -325,6 +491,7 @@ const AudienceAgentHandbook = () => {
           { id: 'section3', label: '3. Reglas Complejas' },
           { id: 'section4', label: '4. Coincidencia de Texto' },
           { id: 'section5', label: '5. Insights' },
+          { id: 'section6', label: '6. Límites de Prompts' },
           { id: 'quickref', label: 'Referencia Rápida' },
           { id: 'quiz', label: 'Prueba tus Habilidades' }
         ]
@@ -437,6 +604,40 @@ const AudienceAgentHandbook = () => {
             prompt: "Dime sobre el segmento legal y qué deberíamos saber.",
             explanation: "Sin métricas específicas, sin marco temporal, demasiado vago, no está claro qué información se necesita."
           }
+        },
+        promptLimits: {
+          title: "6. Límites de Prompts y Guías de Complejidad",
+          description: "El Agente de Audiencias funciona mejor con prompts enfocados de un solo objetivo. Evita prompts demasiado complejos que intentan lograr demasiado a la vez.",
+          limitsTitle: "Límites Recomendados",
+          limits: [
+            { label: "Límite de Caracteres", value: "500", max: "1,500", description: "Mantén los prompts concisos. Apunta a menos de 500 caracteres, nunca excedas 1,500." },
+            { label: "Reglas de Segmento", value: "3-5", max: "6", description: "Limita las condiciones por prompt. Más reglas = dividir en múltiples prompts." },
+            { label: "Secciones", value: "0", max: "1", description: "Evita prompts con múltiples secciones. Cada sección debe ser una solicitud separada." },
+            { label: "Definiciones", value: "1-2", max: "2", description: "Define un concepto a la vez, luego referéncialo en prompts de seguimiento." }
+          ],
+          avoidTitle: "Qué Evitar",
+          avoidItems: [
+            { title: "Meta-Instrucciones", description: "Frases como 'REGLAS DE EJECUCIÓN', 'PUERTA DE APROBACIÓN', 'NO COMENZAR', 'DETENERSE AQUÍ' confunden al agente." },
+            { title: "Múltiples Objetivos", description: "No combines análisis, creación de segmentos e informes en un solo prompt." },
+            { title: "Cadenas Lógicas Complejas", description: "Lógica Y/O profundamente anidada con muchas condiciones debe simplificarse." },
+            { title: "Definiciones de Datos Personalizadas", description: "Evita redefinir niveles de suscripción, lógica de renovación o definiciones de segmentos en línea." }
+          ],
+          breakdownTitle: "Cuándo Dividir los Prompts",
+          breakdownDescription: "Si tu prompt tiene alguno de estos, considera dividirlo:",
+          breakdownItems: [
+            "Múltiples encabezados de SECCIÓN (SECCIÓN 1, SECCIÓN 2, etc.)",
+            "Más de 5 reglas o condiciones numeradas",
+            "Definiciones personalizadas para suscripciones, niveles o cohortes",
+            "Múltiples objetivos de análisis o requisitos de salida",
+            "Instrucciones sobre cómo procesar el prompt mismo"
+          ],
+          exampleTitle: "Ejemplo: Dividiendo una Solicitud Compleja",
+          exampleBad: "SECCIÓN 1: Definir niveles de suscriptores según uso. SECCIÓN 2: Aplicar lógica de renovación. SECCIÓN 3: Analizar tiempos de abandono por producto.",
+          exampleGood: [
+            "Prompt 1: \"Crear niveles de suscriptores según frecuencia de inicio de sesión en los últimos 6 meses: Usuarios Intensivos (diario), Regular (semanal), Ocasional (mensual), En Riesgo (< mensual).\"",
+            "Prompt 2: \"Para los niveles de suscriptores creados, identificar clientes que se acercan a la renovación (dentro de 60 días) con uso decreciente.\"",
+            "Prompt 3: \"Analizar patrones de abandono para cada nivel de suscriptor, comparando productos Westlaw vs Practical Law.\""
+          ]
         },
         quickReference: {
           title: "Referencia Rápida: Plantilla de Estructura de Prompt",
@@ -865,6 +1066,105 @@ const AudienceAgentHandbook = () => {
           </div>
         </section>
 
+        {/* Section 6: Prompt Limits */}
+        <section id="section6" className="bg-white rounded-xl shadow-sm p-8 border border-slate-200 hover-lift animate-fadeIn">
+          <div className="flex items-center gap-3 mb-3">
+            <AlertCircle className="text-orange-600" size={28} />
+            <h2 className="text-2xl font-semibold text-slate-900">
+              {t.sections.promptLimits.title}
+            </h2>
+          </div>
+          <p className="text-slate-700 mb-6">{t.sections.promptLimits.description}</p>
+
+          {/* Recommended Limits */}
+          <div className="mb-8">
+            <h3 className="text-lg font-medium text-slate-800 mb-4">
+              {t.sections.promptLimits.limitsTitle}
+            </h3>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {t.sections.promptLimits.limits.map((limit, idx) => (
+                <div key={idx} className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg p-4 border border-slate-200">
+                  <div className="text-sm font-semibold text-slate-600 mb-1">{limit.label}</div>
+                  <div className="flex items-baseline gap-2 mb-2">
+                    <span className="text-2xl font-bold text-emerald-600">{limit.value}</span>
+                    <span className="text-sm text-slate-500">
+                      {language === 'en' ? `(max ${limit.max})` : `(máx ${limit.max})`}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600">{limit.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* What to Avoid */}
+          <div className="mb-8">
+            <h3 className="text-lg font-medium text-slate-800 mb-4 flex items-center gap-2">
+              <XCircle size={20} className="text-red-600" />
+              {t.sections.promptLimits.avoidTitle}
+            </h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              {t.sections.promptLimits.avoidItems.map((item, idx) => (
+                <div key={idx} className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-red-900 mb-1">{item.title}</h4>
+                  <p className="text-sm text-red-800">{item.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* When to Break Down Prompts */}
+          <div className="mb-8">
+            <h3 className="text-lg font-medium text-slate-800 mb-3">
+              {t.sections.promptLimits.breakdownTitle}
+            </h3>
+            <p className="text-slate-600 mb-3">{t.sections.promptLimits.breakdownDescription}</p>
+            <ul className="space-y-2 bg-orange-50 border border-orange-200 rounded-lg p-4">
+              {t.sections.promptLimits.breakdownItems.map((item, idx) => (
+                <li key={idx} className="text-orange-800 flex gap-2">
+                  <span className="text-orange-600 font-bold">!</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Example: Breaking Down */}
+          <div>
+            <h3 className="text-lg font-medium text-slate-800 mb-4">
+              {t.sections.promptLimits.exampleTitle}
+            </h3>
+
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <XCircle size={18} className="text-red-600" />
+                <span className="font-semibold text-red-900">
+                  {language === 'en' ? 'Too Complex:' : 'Demasiado Complejo:'}
+                </span>
+              </div>
+              <p className="text-sm text-red-800 font-mono">
+                "{t.sections.promptLimits.exampleBad}"
+              </p>
+            </div>
+
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <CheckCircle size={18} className="text-green-600" />
+                <span className="font-semibold text-green-900">
+                  {language === 'en' ? 'Better - Broken into steps:' : 'Mejor - Dividido en pasos:'}
+                </span>
+              </div>
+              <div className="space-y-3">
+                {t.sections.promptLimits.exampleGood.map((prompt, idx) => (
+                  <div key={idx} className="bg-white rounded p-3 border border-green-200">
+                    <p className="text-sm text-green-800 font-mono">{prompt}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Quick Reference */}
         <section id="quickref" className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl shadow-lg p-8 text-white hover-lift animate-fadeIn">
           <h2 className="text-2xl font-semibold mb-4">
@@ -922,6 +1222,122 @@ const AudienceAgentHandbook = () => {
 
             {quizResult && (
               <div className="mt-6 space-y-4 animate-fadeIn">
+                {/* Critical Warnings (Errors) - Show first */}
+                {quizResult.warnings && quizResult.warnings.filter(w => w.type === 'error').length > 0 && (
+                  <div className="bg-red-50 border-2 border-red-300 rounded-lg p-5">
+                    <h4 className="font-semibold text-red-900 mb-3 flex items-center gap-2">
+                      <XCircle size={20} />
+                      {language === 'en' ? 'Critical Issues Detected' : 'Problemas Críticos Detectados'}
+                    </h4>
+                    <ul className="space-y-3">
+                      {quizResult.warnings.filter(w => w.type === 'error').map((warning, idx) => (
+                        <li key={idx} className="text-red-800">
+                          <span className="font-semibold block">{warning.title}</span>
+                          <span className="text-sm">{warning.message}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Warnings */}
+                {quizResult.warnings && quizResult.warnings.filter(w => w.type === 'warning').length > 0 && (
+                  <div className="bg-orange-50 border border-orange-300 rounded-lg p-5">
+                    <h4 className="font-semibold text-orange-900 mb-3 flex items-center gap-2">
+                      <AlertCircle size={20} />
+                      {language === 'en' ? 'Warnings' : 'Advertencias'}
+                    </h4>
+                    <ul className="space-y-3">
+                      {quizResult.warnings.filter(w => w.type === 'warning').map((warning, idx) => (
+                        <li key={idx} className="text-orange-800">
+                          <span className="font-semibold block">{warning.title}</span>
+                          <span className="text-sm">{warning.message}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Complexity Metrics */}
+                {quizResult.complexityFlags && (
+                  <div className="bg-slate-100 border border-slate-300 rounded-lg p-5">
+                    <h4 className="font-semibold text-slate-900 mb-3">
+                      {language === 'en' ? 'Prompt Analysis' : 'Análisis del Prompt'}
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                      {/* Character Count */}
+                      <div className={`p-3 rounded-lg ${
+                        quizResult.complexityFlags.charCount > quizResult.complexityFlags.charLimitError
+                          ? 'bg-red-100 text-red-800'
+                          : quizResult.complexityFlags.charCount > quizResult.complexityFlags.charLimitWarning
+                            ? 'bg-orange-100 text-orange-800'
+                            : 'bg-green-100 text-green-800'
+                      }`}>
+                        <div className="font-semibold">{language === 'en' ? 'Characters' : 'Caracteres'}</div>
+                        <div className="text-lg font-bold">{quizResult.complexityFlags.charCount.toLocaleString()}</div>
+                        <div className="text-xs opacity-75">
+                          {language === 'en' ? `max ${quizResult.complexityFlags.charLimitError}` : `máx ${quizResult.complexityFlags.charLimitError}`}
+                        </div>
+                      </div>
+
+                      {/* Rule Count */}
+                      <div className={`p-3 rounded-lg ${
+                        quizResult.complexityFlags.ruleCount > 6
+                          ? 'bg-red-100 text-red-800'
+                          : quizResult.complexityFlags.ruleCount > 3
+                            ? 'bg-orange-100 text-orange-800'
+                            : 'bg-green-100 text-green-800'
+                      }`}>
+                        <div className="font-semibold">{language === 'en' ? 'Rules' : 'Reglas'}</div>
+                        <div className="text-lg font-bold">{quizResult.complexityFlags.ruleCount}</div>
+                        <div className="text-xs opacity-75">
+                          {language === 'en' ? 'max 5' : 'máx 5'}
+                        </div>
+                      </div>
+
+                      {/* Section Count */}
+                      <div className={`p-3 rounded-lg ${
+                        quizResult.complexityFlags.sectionCount >= 2
+                          ? 'bg-red-100 text-red-800'
+                          : quizResult.complexityFlags.sectionCount === 1
+                            ? 'bg-orange-100 text-orange-800'
+                            : 'bg-green-100 text-green-800'
+                      }`}>
+                        <div className="font-semibold">{language === 'en' ? 'Sections' : 'Secciones'}</div>
+                        <div className="text-lg font-bold">{quizResult.complexityFlags.sectionCount}</div>
+                        <div className="text-xs opacity-75">
+                          {language === 'en' ? 'max 0' : 'máx 0'}
+                        </div>
+                      </div>
+
+                      {/* Definitions */}
+                      <div className={`p-3 rounded-lg ${
+                        quizResult.complexityFlags.definitionCount >= 3
+                          ? 'bg-red-100 text-red-800'
+                          : quizResult.complexityFlags.definitionCount >= 2
+                            ? 'bg-orange-100 text-orange-800'
+                            : 'bg-green-100 text-green-800'
+                      }`}>
+                        <div className="font-semibold">{language === 'en' ? 'Definitions' : 'Definiciones'}</div>
+                        <div className="text-lg font-bold">{quizResult.complexityFlags.definitionCount}</div>
+                        <div className="text-xs opacity-75">
+                          {language === 'en' ? 'max 2' : 'máx 2'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Meta-instructions indicator */}
+                    {quizResult.complexityFlags.hasExecutionRules && (
+                      <div className="mt-3 p-2 bg-red-100 text-red-800 rounded text-sm flex items-center gap-2">
+                        <XCircle size={16} />
+                        {language === 'en'
+                          ? 'Meta-instructions detected (EXECUTION RULES, APPROVAL GATE, etc.)'
+                          : 'Meta-instrucciones detectadas (REGLAS DE EJECUCIÓN, etc.)'}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Score Display */}
                 <div className="bg-slate-50 rounded-lg p-6 border-2 border-slate-200">
                   <div className="flex items-center justify-between mb-3">
@@ -1030,8 +1446,8 @@ const AudienceAgentHandbook = () => {
               {' '}- Forward Deployed Engineering
             </p>
             <img
-              src="/td-logo.png"
-              alt="Treasure Data"
+              src="/tr-logo.png"
+              alt="Thomson Reuters"
               className="h-8"
             />
           </div>
