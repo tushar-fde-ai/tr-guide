@@ -682,6 +682,12 @@ const AudienceAgentHandbook = () => {
               className="h-12"
             />
             <div className="h-8 w-px bg-slate-300"></div>
+            <img
+              src="/td-logo.png"
+              alt="Treasure Data"
+              className="h-10"
+            />
+            <div className="h-8 w-px bg-slate-300"></div>
             <h1 className="text-xl font-semibold text-slate-900">
               {t.title}
             </h1>
@@ -1449,6 +1455,12 @@ const AudienceAgentHandbook = () => {
               src="/tr-logo.png"
               alt="Thomson Reuters"
               className="h-8"
+            />
+            <div className="h-6 w-px bg-slate-300"></div>
+            <img
+              src="/td-logo.png"
+              alt="Treasure Data"
+              className="h-6"
             />
           </div>
         </div>
